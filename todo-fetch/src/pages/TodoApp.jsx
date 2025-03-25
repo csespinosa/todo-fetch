@@ -4,178 +4,176 @@ import { faXmark, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import '../pages/ToDo.css';
 
 const ToDo = () => {
-    const [task, setTask] = useState('');
-    const [tasks, setTasks] = useState([]);
-    const username = "csespinosa";
-    const API_BASE = "https://playground.4geeks.com/todo";
+  const [task, setTask] = useState('');
+  const [tasks, setTasks] = useState([]);
+  const username = "csespinosa";
+  const API_BASE = "https://playground.4geeks.com/todo/todos";
 
-    const loadTasks = async () => {
-        try {
-            console.log("🔄 Cargando tareas...");
-            const response = await fetch(`${API_BASE}/users/${username}`);
+  const loadTasks = async () => {
+    try {
+        console.log("🔄 Cargando tareas...");
+        const response = await fetch(`${API_BASE}/${username}`);
 
-            console.log("📡 Status:", response.status);
-            console.log("📡 OK:", response.ok);
+        console.log("📡 Status:", response.status);
+        console.log("📡 OK:", response.ok);
 
-            if (!response.ok) throw new Error(`Error HTTP ${response.status} : ${response.statusText}`);
+        if (!response.ok) throw new Error(`Error HTTP ${response.status} : ${response.statusText}`);
 
-            const data = await response.json();
-            console.log("Datos recibidos:", data);
+        const data = await response.json();
+        console.log("Datos recibidos:", data);
 
-            setTasks(data.todos || []);
-        } catch (error) {
-            console.error("Error cargando tareas:", error);
-            setTasks([]);
-        }
-    };
+        setTasks(data || []); 
+    } catch (error) {
+        console.error("Error cargando tareas:", error);
+        setTasks([]);
+    }
+};
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
-    useEffect(() => {
+  const addTask = async () => {
+    if (task.trim() === '') return;
+
+    const newTask = { label: task, is_done: false };
+
+    try {
+        console.log("📝 Creando tarea:", newTask);
+        const response = await fetch(`${API_BASE}/${username}`, { 
+            method: "POST",
+            body: JSON.stringify(newTask),
+            headers: { "Content-Type": "application/json" }
+        });
+
+        console.log("Estatus:", response.status);
+        console.log("OK:", response.ok);
+
+        if (!response.ok) throw new Error(`Error ${response.status} : ${response.statusText}`);
+
+        console.log("Tarea creada");
+        setTask('');
         loadTasks();
-    }, []);
+    } catch (error) {
+        console.error("Error al agregar tarea:", error);
+    }
+};
 
-    const addTask = async () => {
-        if (task.trim() === '') return;
+  const deleteTask = async (taskId) => {
+    try {
+      console.log(`🗑️ Eliminando tarea con ID ${taskId}`);
+      const response = await fetch(`${API_BASE}/todos/${taskId}`, {
+        method: "DELETE"
+      });
 
-        const newTask = { label: task, is_done: false };
+      console.log("📡 Status:", response.status);
+      console.log("📡 OK:", response.ok);
 
-        try {
-            console.log("📝 Creando tarea:", newTask);
-            const response = await fetch(`${API_BASE}/todos/${username}`, {
-                method: "POST",
-                body: JSON.stringify(newTask),
-                headers: { "Content-Type": "application/json" }
-            });
+      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
 
-            console.log("Estatus:", response.status);
-            console.log("OK:", response.ok);
+      console.log("Tarea eliminada");
+      loadTasks();
+    } catch (error) {
+      console.error("Error al eliminar tarea:", error);
+    }
+  };
 
-            if (!response.ok) throw new Error(`Error ${response.status} : ${response.statusText}`);
+  const clearAllTasks = async () => {
+    try {
+      console.log("🗑️ Eliminando todas las tareas...");
 
-            console.log("Tarea creada");
-            setTask('');
-            loadTasks();
-        } catch (error) {
-            console.error("Error al agregar tarea:", error);
-        }
-    };
+      for (const task of tasks) {
+        console.log(`🗑️ Eliminando tarea con ID ${task.id}...`);
+        const response = await fetch(`https://playground.4geeks.com/todo/todos/${task.id}`, {
+          method: "DELETE"
+        });
 
+        console.log("📡 Status:", response.status);
+        console.log("📡 OK:", response.ok);
 
-    const deleteTask = async (taskId) => {
-        try {
-            console.log(`🗑️ Eliminando tarea con ID ${taskId}`);
-            const response = await fetch(`${API_BASE}/todos/${taskId}`, {
-                method: "DELETE"
-            });
+        if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
 
-            console.log("📡 Status:", response.status);
-            console.log("📡 OK:", response.ok);
-
-            if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-
-            console.log("Tarea eliminada");
-            loadTasks();
-        } catch (error) {
-            console.error("Error al eliminar tarea:", error);
-        }
-    };
-
-    const clearAllTasks = async () => {
-        try {
-            console.log("🗑️ Eliminando todas las tareas...");
-
-            for (const task of tasks) {
-                console.log(`🗑️ Eliminando tarea con ID ${task.id}...`);
-                const response = await fetch(`https://playground.4geeks.com/todo/todos/${task.id}`, {
-                    method: "DELETE"
-                });
-
-                console.log("📡 Status:", response.status);
-                console.log("📡 OK:", response.ok);
-
-                if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-
-            console.log("Todas las tareas eliminadas");
-            setTasks([]);
-        } catch (error) {
-            console.error("Error al eliminar todas las tareas:", error);
-        }
-    };
+      console.log("Todas las tareas eliminadas");
+      setTasks([]);
+    } catch (error) {
+      console.error("Error al eliminar todas las tareas:", error);
+    }
+  };
 
 
-    const toggleTaskCompletion = async (taskId, isDone) => {
-        try {
-            console.log(`🔄 Cambiando estado de tarea ${taskId} a ${!isDone}`);
-            const response = await fetch(`${API_BASE}/todos/${taskId}`, {
-                method: "PUT",
-                body: JSON.stringify({ is_done: !isDone }),
-                headers: { "Content-Type": "application/json" }
-            });
+  const toggleTaskCompletion = async (taskId, isDone) => {
+    try {
+      console.log(`🔄 Cambiando estado de tarea ${taskId} a ${!isDone}`);
+      const response = await fetch(`${API_BASE}/todos/${taskId}`, {
+        method: "PUT",
+        body: JSON.stringify({ is_done: !isDone }),
+        headers: { "Content-Type": "application/json" }
+      });
 
-            console.log("📡 Status:", response.status);
-            console.log("📡 OK:", response.ok);
+      console.log("📡 Status:", response.status);
+      console.log("📡 OK:", response.ok);
 
-            if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
 
-            console.log("✅ Tarea actualizada");
-            loadTasks();
-        } catch (error) {
-            console.error("❌ Error al actualizar tarea:", error);
-        }
-    };
+      console.log("✅ Tarea actualizada");
+      loadTasks();
+    } catch (error) {
+      console.error("❌ Error al actualizar tarea:", error);
+    }
+  };
 
 
-    const pressEnter = (event) => {
-        if (event.key === 'Enter') addTask();
-    };
+  const pressEnter = (event) => {
+    if (event.key === 'Enter') addTask();
+  };
 
-    return (
-        <div className="todo-wrapper">
-            <div className="todo-container">
-                <h1 className="todo-title">To Do</h1>
+  return (
+    <div className="todo-wrapper">
+      <div className="todo-container">
+        <h1 className="todo-title">To Do</h1>
 
-                <div className="input-container">
-                    <input
-                        type="text"
-                        value={task}
-                        onChange={(event) => setTask(event.target.value)}
-                        onKeyDown={pressEnter}
-                        placeholder="Add a new task..."
-                        className="task-input"
-                    />
-                    <button className="add-button" onClick={addTask}>
-                        <FontAwesomeIcon icon={faPlus} />
-                    </button>
-                </div>
-
-                <div className="tasks-container">
-                    {tasks.length > 0 ? (
-                        tasks.map((taskItem) => (
-                            <div key={taskItem.id} className="task-item">
-                                <input
-                                    type="checkbox"
-                                    checked={taskItem.is_done}
-                                    onChange={() => toggleTaskCompletion(taskItem.id, taskItem.is_done)}
-                                />
-                                <span className="task-text">{taskItem.label}</span>
-                                <button className="delete-button" onClick={() => deleteTask(taskItem.id)}>
-                                    <FontAwesomeIcon icon={faXmark} />
-                                </button>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="no-tasks">No hay tareas pendientes.</p>
-                    )}
-                </div>
-
-                {tasks.length > 0 && (
-                    <button className="clear-all-button" onClick={clearAllTasks}>
-                        <FontAwesomeIcon icon={faTrash} /> Limpiar todas las tareas
-                    </button>
-                )}
-            </div>
+        <div className="input-container">
+          <input
+            type="text"
+            value={task}
+            onChange={(event) => setTask(event.target.value)}
+            onKeyDown={pressEnter}
+            placeholder="Add a new task..."
+            className="task-input"
+          />
+          <button className="add-button" onClick={addTask}>
+            <FontAwesomeIcon icon={faPlus} />
+          </button>
         </div>
-    );
+
+        <div className="tasks-container">
+          {tasks.length > 0 ? (
+            tasks.map((taskItem) => (
+              <div key={taskItem.id} className="task-item">
+                <input
+                  type="checkbox"
+                  checked={taskItem.is_done}
+                  onChange={() => toggleTaskCompletion(taskItem.id, taskItem.is_done)}
+                />
+                <span className="task-text">{taskItem.label}</span>
+                <button className="delete-button" onClick={() => deleteTask(taskItem.id)}>
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="no-tasks">No hay tareas pendientes.</p>
+          )}
+        </div>
+
+        {tasks.length > 0 && (
+          <button className="clear-all-button" onClick={clearAllTasks}>
+            <FontAwesomeIcon icon={faTrash} /> Limpiar todas las tareas
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ToDo;
